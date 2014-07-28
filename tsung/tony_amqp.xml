@@ -6,29 +6,25 @@
 	</clients>
 
 	<servers>
-        <server host="149.165.149.8" port="5672" type="tcp" weight="1" />
-        <!-- <server host="149.165.149.8" port="5672" type="tcp" weight="3" /> -->
+            <server host="149.165.149.8" port="5672" type="tcp" weight="1" />
+            <!-- <server host="149.165.149.8" port="5672" type="tcp" weight="3" /> -->
 	</servers>
-
-	<load duration="30" unit="second">
-        <user session="amqp_consumer" start_time="1" unit="second"></user>
-
-		<arrivalphase phase="1" duration="5" unit="second">
-			<users maxnumber="1" arrivalrate="2" unit="second"/>
-		</arrivalphase>
+	<load duration="60" unit="second">
+            <user session="amqp_consumer" start_time="1" unit="second"></user>
+	    <arrivalphase phase="1" duration="10" unit="second">
+		<users maxnumber="10" arrivalrate="20" unit="second"/>
+	    </arrivalphase>
 	</load>
-
 	<options>
-        <!--amqp config: username and password -->
-        <option type="ts_amqp" name="username" value="clients" />
-        <option type="ts_amqp" name="password" value="Ruza3que" />
-
-        <!--amqp heartbeat timeout: 30s (default 600s)-->
-        <option type="ts_amqp" name="heartbeat" value="30" />
+            <!--amqp config: username and password -->
+            <option type="ts_amqp" name="username" value="clients" />
+            <option type="ts_amqp" name="password" value="Ruza3que" />
+            <!--amqp heartbeat timeout: 30s (default 600s)-->
+            <option type="ts_amqp" name="heartbeat" value="30" />
 	</options>
 
 	<sessions>
-		<session probability="100" name="amqp_publisher" type="ts_amqp" bidi="true">
+	    <session probability="100" name="amqp_publisher" type="ts_amqp" bidi="true">
             <request>
                 <amqp type="connection.open" vhost="/"></amqp>
             </request>
@@ -41,15 +37,16 @@
             </for>
 
             <!-- ignore this request if you don't need publisher confirm -->
-            <for from="1" to="10" incr="1" var="loops">
+            <!--
+            <for from="1" to="2" incr="1" var="loops">
                 <request subst="true">
                     <amqp type="confirm.select" channel="%%_loops%%"></amqp>
                 </request>
             </for>
-            
+            -->
             <for from="1" to="10" incr="1" var="loops">
                 <!-- Specify operation number, here for publish message-->
-                <for from="1" to="10" incr="1" var="counter">
+                <for from="1" to="1000" incr="1" var="counter">
                     <transaction name="publish">
                         <!-- Tony: specify payload_size to have tsung generate a payload for you -->
                         <request subst="true">
