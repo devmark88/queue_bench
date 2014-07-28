@@ -1,0 +1,137 @@
+<?xml version="1.0"?>
+<!DOCTYPE tsung SYSTEM "/usr/share/tsung/tsung-1.0.dtd">
+<tsung loglevel="debug" version="1.0">
+	<clients>
+		<client host="vm-149-3" maxusers="10"></client>
+	</clients>
+
+	<servers>
+        <server host="149.165.149.8" port="5672" type="tcp" weight="1" />
+        <!-- <server host="149.165.149.8" port="5672" type="tcp" weight="3" /> -->
+	</servers>
+
+	<load duration="30" unit="second">
+        <user session="amqp_consumer" start_time="1" unit="second"></user>
+
+		<arrivalphase phase="1" duration="5" unit="second">
+			<users maxnumber="1" arrivalrate="50" unit="second"/>
+		</arrivalphase>
+	</load>
+
+	<options>
+        <!--amqp config: username and password -->
+        <option type="ts_amqp" name="username" value="clients" />
+        <option type="ts_amqp" name="password" value="Ruza3que" />
+
+        <!--amqp heartbeat timeout: 30s (default 600s)-->
+        <option type="ts_amqp" name="heartbeat" value="30" />
+	</options>
+
+	<sessions>
+		<session probability="100" name="amqp_publisher" type="ts_amqp" bidi="true">
+            <request>
+                <amqp type="connection.open" vhost="/"></amqp>
+            </request>
+
+            <!--  open channel, channel id is from 1 to 10 -->
+            <for from="1" to="10" incr="10" var="loops">
+                <request>
+                    <amqp type="channel.open"></amqp>
+                </request>
+            </for>
+
+            <!-- ignore this request if you don't need publisher confirm -->
+            <for from="1" to="10" incr="1" var="loops">
+                <request subst="true">
+                    <amqp type="confirm.select" channel="%%_loops%%"></amqp>
+                </request>
+            </for>
+            
+            <for from="1" to="10" incr="1" var="loops">
+                <!-- Specify operation number, here for publish message-->
+                <for from="1" to="10" incr="1" var="counter">
+                    <transaction name="publish">
+                        <!-- Tony: specify payload_size to have tsung generate a payload for you -->
+                        <request subst="true">
+                            <amqp type="basic.publish" channel="%%_loops%%" exchange="" routing_key="sizeTest" persistent="true" payload_size="100"></amqp>
+                        </request> <!-- Tony changed exchange from test_exchange to ""-->
+                        <!-- substitutions are supported on the payload. Payload will override payload_size. -->
+                        <!-- Tony changed from true-->
+                    <!--
+                        <request subst="false"> 
+                            <amqp type="basic.publish" channel="%%_loops%%" exchange="test_exchange" routing_key="test_queue" persistent="true" payload="Test Payload"></amqp>
+                        </request>
+                    -->
+                    </transaction>
+                </for>
+
+                <!-- if publish with confirm, add a waitForConfirms request as you need: timeout=1s -->
+            <!--
+                <request>
+                    <amqp type="waitForConfirms" timeout="1"></amqp>
+                </request>
+            -->
+            </for>
+
+            <for from="1" to="10" incr="1" var="loops">
+                <request subst="true">
+                    <amqp type="channel.close" channel="%%_loops%%"></amqp>
+                </request>
+            </for>
+
+            <request>
+                <amqp type="connection.close"></amqp>
+            </request>
+		</session>
+
+
+<!--
+		<session probability="0" name="amqp_consumer" type="ts_amqp" bidi="true">
+            <request>
+                <amqp type="connection.open"></amqp>
+            </request>
+
+            <for from="1" to="10" incr="1" var="loops">
+                <request>
+                    <amqp type="channel.open"></amqp>
+                </request>
+            </for>
+-->
+
+
+
+            <!-- ignore this request if you don't need qos(prefetch_count only) -->
+        <!--
+            <for from="1" to="10" incr="1" var="loops">
+                <request subst="true">
+                    <amqp type="basic.qos" channel="%%_loops%%" prefetch_count="200"></amqp>
+                </request>
+            </for>
+        -->
+
+
+<!--
+            <for from="1" to="10" incr="1" var="loops">
+                <request subst="true">
+                    <amqp type="basic.consume" channel="%%_loops%%" queue="test_queue" ack="true"></amqp>
+                </request>
+            </for>
+
+            <request>
+                <amqp type="waitForMessages" timeout="180"></amqp>
+            </request>
+
+            <for from="1" to="10" incr="1" var="loops">
+                <request subst="true">
+                    <amqp type="channel.close" channel="%%_loops%%"></amqp>
+                </request>
+            </for>
+
+            <request>
+                <amqp type="connection.close"></amqp>
+            </request>
+		</session>
+
+-->
+	</sessions>
+</tsung>
